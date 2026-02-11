@@ -2,30 +2,38 @@ name: Trendyol Respond Bridge
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Öneri: 1 dakika GitHub için çok agresiftir, 5 dk daha sağlıklıdır.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
-permissions: # Yazma izni ekledik
-  contents: write
+concurrency:
+  group: trendyol-qna
+  cancel-in-progress: false
 
 jobs:
   check-questions:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      with:
-        persist-credentials: true # Push yapabilmek için gerekli
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
     - name: Install dependencies
-      run: pip install requests
-    
+      run: pip install -r requirements.txt
+
+    # ✅ cache restore
+    - name: Restore last question cache
+      uses: actions/cache@v3
+      with:
+        path: last_question_id.txt
+        key: trendyol-last-id-${{ github.run_id }}
+        restore-keys: |
+          trendyol-last-id-
+
     - name: Run bot
       env:
         TRENDYOL_API_KEY: ${{ secrets.TRENDYOL_API_KEY }}
@@ -36,10 +44,9 @@ jobs:
         RESPOND_API_TOKEN: ${{ secrets.RESPOND_API_TOKEN }}
       run: python main.py
 
-    - name: Commit and Push if changed # Dosyayı kaydeden kritik adım
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action Bot"
-        git add last_question_id.txt
-        git commit -m "chore: update last question id [skip ci]" || exit 0
-        git push
+    # ✅ cache save
+    - name: Save last question cache
+      uses: actions/cache@v3
+      with:
+        path: last_question_id.txt
+        key: trendyol-last-id-${{ github.run_id }}
