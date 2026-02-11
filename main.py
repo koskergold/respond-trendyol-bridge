@@ -7,6 +7,8 @@ API_KEY = os.getenv("TRENDYOL_API_KEY")
 API_SECRET = os.getenv("TRENDYOL_API_SECRET")
 SELLER_ID = os.getenv("TRENDYOL_SELLER_ID")
 RESPOND_WEBHOOK = os.getenv("RESPOND_WEBHOOK_URL")
+RESPOND_CHANNEL_ID = os.getenv("RESPOND_CHANNEL_ID")
+RESPOND_API_TOKEN = os.getenv("RESPOND_API_TOKEN")
 
 credentials = f"{API_KEY}:{API_SECRET}"
 base64_creds = base64.b64encode(credentials.encode()).decode()
@@ -49,32 +51,39 @@ try:
             print(f"🆕 {len(new_questions)} yeni soru!")
             
             for question in reversed(new_questions):
-                if RESPOND_WEBHOOK:
+                if RESPOND_WEBHOOK and RESPOND_CHANNEL_ID and RESPOND_API_TOKEN:
                     payload = {
-                        "message": {
-                            "type": "text",
-                            "text": f"📦 Ürün: {question.get('productName', 'Bilinmiyor')}\n\n❓ Soru: {question['text']}\n\n👤 Müşteri: {question.get('userName', 'Anonim')}"
-                        },
+                        "channelId": RESPOND_CHANNEL_ID,
                         "contact": {
                             "customId": str(question['customerId']),
-                            "firstName": question.get('userName', 'Müşteri')
+                            "firstName": question.get('userName', 'Müşteri'),
+                            "lastName": "Trendyol"
                         },
-                        "metadata": {
-                            "questionId": str(question['id']),
-                            "productName": question.get('productName', ''),
-                            "source": "trendyol"
+                        "message": {
+                            "type": "text",
+                            "text": f"📦 Ürün: {question.get('productName', 'Bilinmiyor')}\n\n❓ Soru: {question['text']}\n\n👤 Müşteri: {question.get('userName', 'Anonim')}\n\n🆔 Soru ID: {question['id']}"
                         }
                     }
                     
-                    webhook_response = requests.post(RESPOND_WEBHOOK, json=payload, timeout=10)
+                    webhook_headers = {
+                        'Authorization': f'Bearer {RESPOND_API_TOKEN}',
+                        'Content-Type': 'application/json'
+                    }
+                    
+                    webhook_response = requests.post(
+                        RESPOND_WEBHOOK, 
+                        json=payload, 
+                        headers=webhook_headers,
+                        timeout=10
+                    )
                     
                     if webhook_response.status_code in [200, 201]:
                         print(f"✅ Soru #{question['id']} gönderildi")
                         last_question_id = question['id']
                     else:
-                        print(f"❌ Webhook hatası: {webhook_response.status_code}")
+                        print(f"❌ Webhook hatası: {webhook_response.status_code} - {webhook_response.text}")
                 else:
-                    print(f"⚠️ Webhook URL yok")
+                    print(f"⚠️ Webhook bilgileri eksik")
                     last_question_id = question['id']
         else:
             print("💤 Yeni soru yok")
