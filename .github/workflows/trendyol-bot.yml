@@ -1,0 +1,32 @@
+name: Trendyol Respond Bridge
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Her 5 dakikada bir çalışır
+  workflow_dispatch:  # Manuel çalıştırma için
+
+jobs:
+  check-questions:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install requests
+    
+    - name: Run bot
+      env:
+        TRENDYOL_API_KEY: ${{ secrets.TRENDYOL_API_KEY }}
+        TRENDYOL_API_SECRET: ${{ secrets.TRENDYOL_API_SECRET }}
+        TRENDYOL_SELLER_ID: ${{ secrets.TRENDYOL_SELLER_ID }}
+        RESPOND_WEBHOOK_URL: ${{ secrets.RESPOND_WEBHOOK_URL }}
+      run: |
+        python main.py
