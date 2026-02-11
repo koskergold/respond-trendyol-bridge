@@ -2,8 +2,11 @@ name: Trendyol Respond Bridge
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/5 * * * *' # Öneri: 1 dakika GitHub için çok agresiftir, 5 dk daha sağlıklıdır.
   workflow_dispatch:
+
+permissions: # Yazma izni ekledik
+  contents: write
 
 jobs:
   check-questions:
@@ -12,6 +15,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        persist-credentials: true # Push yapabilmek için gerekli
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -19,8 +24,7 @@ jobs:
         python-version: '3.11'
     
     - name: Install dependencies
-      run: |
-        pip install requests
+      run: pip install requests
     
     - name: Run bot
       env:
@@ -30,5 +34,12 @@ jobs:
         RESPOND_WEBHOOK_URL: ${{ secrets.RESPOND_WEBHOOK_URL }}
         RESPOND_CHANNEL_ID: ${{ secrets.RESPOND_CHANNEL_ID }}
         RESPOND_API_TOKEN: ${{ secrets.RESPOND_API_TOKEN }}
+      run: python main.py
+
+    - name: Commit and Push if changed # Dosyayı kaydeden kritik adım
       run: |
-        python main.py
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action Bot"
+        git add last_question_id.txt
+        git commit -m "chore: update last question id [skip ci]" || exit 0
+        git push
