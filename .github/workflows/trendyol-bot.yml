@@ -2,8 +2,8 @@ name: Trendyol Respond Bridge
 
 on:
   schedule:
-    - cron: '*/1 * * * *'  # Her 1 dakikada bir çalışır
-  workflow_dispatch:  # Manuel çalıştırma için
+    - cron: '*/1 * * * *'
+  workflow_dispatch:
 
 jobs:
   check-questions:
@@ -28,5 +28,7 @@ jobs:
         TRENDYOL_API_SECRET: ${{ secrets.TRENDYOL_API_SECRET }}
         TRENDYOL_SELLER_ID: ${{ secrets.TRENDYOL_SELLER_ID }}
         RESPOND_WEBHOOK_URL: ${{ secrets.RESPOND_WEBHOOK_URL }}
+        RESPOND_CHANNEL_ID: ${{ secrets.RESPOND_CHANNEL_ID }}
+        RESPOND_API_TOKEN: ${{ secrets.RESPOND_API_TOKEN }}
       run: |
         python main.py
